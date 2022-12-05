@@ -125,7 +125,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/tvDescHello"
                 app:startIconDrawable="@drawable/ic_email">
 
-                <com.google.android.material.textfield.TextInputEditText
+                <com.example.capstone.ui.custom_view.EmailEditText
                     android:id="@+id/edtUsernameLogIn"
                     android:layout_width="match_parent"
                     android:layout_height="70dp"
@@ -146,7 +146,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/textUsername"
                 app:startIconDrawable="@drawable/ic_password">
 
-                <com.google.android.material.textfield.TextInputEditText
+                <com.example.capstone.ui.custom_view.PasswordEditText
                     android:id="@+id/edtPasswordLogin"
                     android:layout_width="match_parent"
                     android:layout_height="70dp"
