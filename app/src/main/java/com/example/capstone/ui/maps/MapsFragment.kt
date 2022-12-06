@@ -1,11 +1,13 @@
 package com.example.capstone.ui.maps
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.*
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import com.example.capstone.R
 import com.example.capstone.data.Result
@@ -27,6 +29,7 @@ class MapsFragment : Fragment() {
     private lateinit var viewModelFactory: ViewModelFactory
     private val mapsViewModel: MapsViewModel by viewModels { viewModelFactory }
     private val boundsBuilder = LatLngBounds.Builder()
+    private lateinit var mMap: GoogleMap
 
 
     private val callback = OnMapReadyCallback { googleMap ->
@@ -34,7 +37,9 @@ class MapsFragment : Fragment() {
         googleMap.uiSettings.isIndoorLevelPickerEnabled = true
         googleMap.uiSettings.isCompassEnabled = true
         googleMap.uiSettings.isMapToolbarEnabled = true
-        googleMap.isMyLocationEnabled = true
+
+
+        mMap = googleMap
 
         val dummyLocation = LatLng(Constanta.DICODING_LATITUDE, Constanta.DICODING_LONGITUDE)
         googleMap.addMarker(
@@ -44,9 +49,11 @@ class MapsFragment : Fragment() {
         )
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(dummyLocation, 15f))
 
+        getMyLocation()
 
         setViewModel()
         getStoryWithLocation(googleMap)
+
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -65,7 +72,6 @@ class MapsFragment : Fragment() {
     private fun setViewModel(){
         viewModelFactory = ViewModelFactory.getInstnce(binding.root.context)
     }
-
     private fun getStoryWithLocation(googleMap: GoogleMap) {
         mapsViewModel.getStoriesMap().observe(this) { result ->
             if (result != null) {
@@ -94,6 +100,19 @@ class MapsFragment : Fragment() {
                     )
             )
             boundsBuilder.include(latLng)
+        }
+    }
+    private val requestPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()){
+        if (it){
+            getMyLocation()
+        }
+    }
+    private fun getMyLocation(){
+        if (ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED){
+            mMap.isMyLocationEnabled = true
+        } else {
+            requestPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 

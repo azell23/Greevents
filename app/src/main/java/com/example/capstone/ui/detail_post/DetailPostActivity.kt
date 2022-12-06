@@ -38,9 +38,6 @@ import java.io.File
 class DetailPostActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDetailPostBinding
     private lateinit var viewModelFactory: ViewModelFactory
-    private var getFile: File? = null
-    private var suratFile: File? = null
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private val detailEventViewModel: DetailEventViewModel by viewModels { viewModelFactory }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,11 +56,20 @@ class DetailPostActivity : AppCompatActivity() {
     }
     private fun back(){
         binding.btnBack.setOnClickListener {
-            onBackPressed()
+            startActivity(Intent(this, ListPostActivity::class.java).also {
+                finish()
+            })
         }
     }
     private fun setViewModel(){
         viewModelFactory = ViewModelFactory.getInstnce(binding.root.context)
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        startActivity(Intent(this, ListPostActivity::class.java).also {
+            finish()
+        })
     }
 
     private fun getDetailEvent() {

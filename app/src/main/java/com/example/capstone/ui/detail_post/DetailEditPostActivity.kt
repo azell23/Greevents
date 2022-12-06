@@ -28,6 +28,7 @@ import com.example.capstone.databinding.ActivityEditEventBinding
 import com.example.capstone.factory.ViewModelFactory
 import com.example.capstone.ui.custom_view.MyAlertDialog
 import com.example.capstone.ui.detail_comment.DetailCommentActivity
+import com.example.capstone.ui.detail_event.DetailEventActivity
 import com.example.capstone.ui.detail_event.DetailEventViewModel
 import com.example.capstone.ui.list_post.ListPostActivity
 import com.example.capstone.ui.main.MainActivity
@@ -357,7 +358,9 @@ class DetailEditPostActivity : AppCompatActivity() {
                                 )
                                     .show()
                                 finish()
-                                startActivity(Intent(this, ListPostActivity::class.java))
+                                startActivity(Intent(this, DetailPostActivity::class.java).also {
+                                    it.putExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, id)
+                                })
                             } else {
                                 Toast.makeText(
                                     this,
@@ -429,7 +432,9 @@ class DetailEditPostActivity : AppCompatActivity() {
                             )
                                 .show()
                             finish()
-                            startActivity(Intent(this, ListPostActivity::class.java))
+                            startActivity(Intent(this, DetailPostActivity::class.java).also {
+                                it.putExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, id)
+                            })
                         } else {
                             Toast.makeText(
                                 this,

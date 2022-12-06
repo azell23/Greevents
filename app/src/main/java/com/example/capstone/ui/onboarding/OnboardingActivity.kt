@@ -29,14 +29,11 @@ class OnboardingActivity : AppCompatActivity() {
         binding = ActivityOnboardingBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-
-    supportActionBar?.hide()
-    preferenceLogin = PreferenceLogin(this)
-
-    loginResultModel = preferenceLogin.getUser()
-    isLogin()
-
-
+        supportActionBar?.hide()
+        preferenceLogin = PreferenceLogin(this)
+        loginResultModel = preferenceLogin.getUser()
+        isLogin()
+        
         binding.button.setOnClickListener {
             startActivity(Intent(this, SplashActivity::class.java))
         }

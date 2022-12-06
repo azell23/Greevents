@@ -14,6 +14,8 @@ import com.example.capstone.factory.ViewModelFactory
 import com.example.capstone.model.event_model.Greevents
 import com.example.capstone.ui.detail_post.DetailPostActivity
 import com.example.capstone.ui.detail_post.DetailPostActivity.Companion.EXTRA_ID_POST_DETAIL
+import com.example.capstone.ui.main.MainActivity
+import com.example.capstone.ui.profile.ProfileFragment
 
 class ListPostActivity : AppCompatActivity() {
     private lateinit var binding: ActivityListPostBinding
@@ -38,13 +40,17 @@ class ListPostActivity : AppCompatActivity() {
     }
     private fun back(){
         binding.btnBack.setOnClickListener {
-            finish()
+            startActivity(Intent(this@ListPostActivity, MainActivity::class.java).also {
+                finish()
+            })
         }
     }
 
     override fun onBackPressed() {
         super.onBackPressed()
-        finish()
+        startActivity(Intent(this@ListPostActivity, MainActivity::class.java).also {
+            finish()
+        })
     }
 
     private fun setViewModel() {
