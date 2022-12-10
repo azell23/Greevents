@@ -102,14 +102,14 @@ class DetailEditPostActivity : AppCompatActivity() {
             this, DatePickerDialog.OnDateSetListener { view, year, monthofYear, dayOfMonth ->
                 val returnDate = "${monthofYear + 1} $dayOfMonth $year"
                 val date = StringHelper.parseDate(
-                    "dd MM yyyy",
-                    "dd/MM/yy",
+                    "mm DD yyyy",
+                    "mm/DD/yy",
                     returnDate
                 )
                 binding.edtDateEventEdit.setText(
                     StringHelper.parseDate(
-                        "dd/MM/yy",
-                        "dd MM yyyy",
+                        "mm/DD/yy",
+                        "mm DD yyyy",
                         date
                     )
                 )

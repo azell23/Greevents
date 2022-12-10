@@ -110,11 +110,11 @@ class UploadActivity : AppCompatActivity() {
             this, DatePickerDialog.OnDateSetListener { view, year, monthofYear, dayOfMonth ->
                 val returnDate = "${monthofYear + 1} $dayOfMonth $year"
                 val date = StringHelper.parseDate(
-                    "dd MM yyyy",
-                    "dd/MM/yy",
+                    "mm DD yyyy",
+                    "mm/DD/yy",
                     returnDate
                 )
-                binding.edtDateEvent.setText(StringHelper.parseDate("dd/MM/yy", "dd MM yyyy", date))
+                binding.edtDateEvent.setText(StringHelper.parseDate("mm/DD/yy", "mm DD yyyy", date))
                 binding.edtDateEvent.error = null
             }, year, moth, day
         )
@@ -321,23 +321,19 @@ class UploadActivity : AppCompatActivity() {
                 author,
                 email,
                 contact
-            ).observe(this) {
-                if (it != null) {
-                    showLoading(false)
-                    successAlert()
-                    Toast.makeText(
-                        this,
-                        "Sukses Upload Story",
-                        Toast.LENGTH_SHORT
-                    )
-                        .show()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Gagal Upload Story",
-                        Toast.LENGTH_SHORT
-                    )
-                        .show()
+            ).observe(this) { result ->
+
+                when(result) {
+                    is Result.Loading -> {
+                        showLoading(true)
+                    }
+                    is Result.Error -> {
+                        showLoading(false)
+                        successAlert()
+                    }
+                    is Result.Success -> {
+                        successAlert()
+                    }
                 }
             }
         } else if (getFile != null && suratFile != null) {
