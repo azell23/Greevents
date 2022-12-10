@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -12,27 +11,19 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
-import com.example.capstone.R
 import com.example.capstone.data.Result
 import com.example.capstone.databinding.ActivityEditProfileAvatarBinding
 import com.example.capstone.factory.ViewModelFactory
-import com.example.capstone.ui.custom_view.MyAlertDialog
-import com.example.capstone.ui.detail_event.DetailEventActivity
-import com.example.capstone.ui.home.HomeFragment
-import com.example.capstone.ui.list_join.ListJoinActivity
-import com.example.capstone.ui.main.MainActivity
-import com.example.capstone.ui.profile.DetailProfileActivity
 import com.example.capstone.ui.profile.DetailProfileViewModel
-import com.example.capstone.ui.profile.ProfileFragment
 import com.example.capstone.util.reduceFileImage
 import com.example.capstone.util.uriToFile
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 
 class EditProfileAvatarActivity : AppCompatActivity() {
@@ -40,7 +31,7 @@ class EditProfileAvatarActivity : AppCompatActivity() {
     private var getFile: File? = null
     private lateinit var viewModelFactory: ViewModelFactory
     private val detailProfileViewModel: DetailProfileViewModel by viewModels { viewModelFactory }
-    private val editProfileAvatarViewModel:EditProfileAvatarViewModel by viewModels { viewModelFactory }
+    private val editProfileAvatarViewModel: EditProfileAvatarViewModel by viewModels { viewModelFactory }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -88,22 +79,22 @@ class EditProfileAvatarActivity : AppCompatActivity() {
         }
     }
 
-    private fun setActionBar(){
+    private fun setActionBar() {
         supportActionBar?.hide()
     }
 
-    private fun setViewModel(){
+    private fun setViewModel() {
         viewModelFactory = ViewModelFactory.getInstnce(binding.root.context)
     }
 
-    private fun getDataUser(){
-        detailProfileViewModel.getDataUser.observe(this){
+    private fun getDataUser() {
+        detailProfileViewModel.getDataUser.observe(this) {
             binding.apply {
-                when(it) {
+                when (it) {
                     is Result.Loading -> {
                         showLoading(true)
                     }
-                    is Result.Error ->{
+                    is Result.Error -> {
                         showLoading(false)
                     }
                     is Result.Success -> {
@@ -172,7 +163,7 @@ class EditProfileAvatarActivity : AppCompatActivity() {
         editProfileAvatarViewModel.updateProfileAvatar(
             imageMultipart
         ).observe(this) {
-            if (it != null){
+            if (it != null) {
                 when (it) {
                     is Result.Loading -> {
                         showLoading(true)
@@ -180,7 +171,7 @@ class EditProfileAvatarActivity : AppCompatActivity() {
                     is Result.Error -> {
                         showLoading(false)
                         Log.d("gagag", "${it.error}")
-                        Toast.makeText(this, "${it.error.toString()}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "${it.error}", Toast.LENGTH_SHORT).show()
                     }
                     is Result.Success -> {
                         showLoading(false)
@@ -192,7 +183,7 @@ class EditProfileAvatarActivity : AppCompatActivity() {
         }
     }
 
-    private fun showLoading(isLoading: Boolean){
+    private fun showLoading(isLoading: Boolean) {
         binding.progressBarEditAvatar.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 

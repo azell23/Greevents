@@ -1,13 +1,13 @@
 package com.example.capstone.ui.daftar_event
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import com.example.capstone.R
 import com.example.capstone.data.Result
 import com.example.capstone.databinding.ActivityDaftarEventBinding
@@ -46,14 +46,15 @@ class DaftarEventActivity : AppCompatActivity() {
             joinEvent()
         }
     }
-    private fun back(){
+
+    private fun back() {
         binding.btnBack.setOnClickListener {
             onBackPressed()
         }
     }
 
 
-    private fun buttonJoin(){
+    private fun buttonJoin() {
         binding.btnJOinEvent.setOnClickListener {
             val builder = AlertDialog.Builder(this)
             builder.setTitle("Peringatan !!!")

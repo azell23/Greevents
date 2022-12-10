@@ -3,6 +3,7 @@
     <string name="text_ayo">Ayo</string>
     <string name="tv_masuk">Masuk</string>
     <string name="tvGaes">Gaes...</string>
+    <string name="error_validation">Lengkapi Form</string>
     <string name="error_message">Error ygy</string>
     <string name="text_desc">Silahkan Isi email dan password Anda, agar bisa masuk.</string>
     <string name="sukses">Sukses</string>

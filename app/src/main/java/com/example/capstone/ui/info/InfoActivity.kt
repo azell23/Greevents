@@ -1,11 +1,9 @@
 package com.example.capstone.ui.info
 
-import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import com.example.capstone.databinding.ActivityInfoBinding
 import com.example.capstone.model.info_model.InfoModel
-import com.example.capstone.ui.home.HomeFragment
 
 class InfoActivity : AppCompatActivity() {
     private lateinit var binding: ActivityInfoBinding
@@ -21,17 +19,17 @@ class InfoActivity : AppCompatActivity() {
 
     }
 
-    private fun setActionBar(){
+    private fun setActionBar() {
         supportActionBar?.hide()
     }
 
-    private fun back(){
+    private fun back() {
         binding.ivback.setOnClickListener {
             onBackPressed()
         }
     }
 
-    private fun getDetailInfo(){
+    private fun getDetailInfo() {
         val getData = intent.getParcelableExtra<InfoModel>(EXTRA_INFO) as InfoModel
         binding.apply {
             tvArtikel.text = getData.artikel.trimEnd()
@@ -40,7 +38,7 @@ class InfoActivity : AppCompatActivity() {
         }
     }
 
-    companion object{
+    companion object {
         const val EXTRA_INFO = "extra_info"
     }
 }

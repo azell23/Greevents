@@ -5,38 +5,28 @@ import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.TextUtils
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.example.capstone.R
 import com.example.capstone.data.Result
 import com.example.capstone.databinding.ActivityDetailEditPostBinding
-import com.example.capstone.databinding.ActivityEditEventBinding
 import com.example.capstone.factory.ViewModelFactory
 import com.example.capstone.ui.custom_view.MyAlertDialog
-import com.example.capstone.ui.detail_comment.DetailCommentActivity
-import com.example.capstone.ui.detail_event.DetailEventActivity
 import com.example.capstone.ui.detail_event.DetailEventViewModel
-import com.example.capstone.ui.list_post.ListPostActivity
 import com.example.capstone.ui.main.MainActivity
-import com.example.capstone.ui.profile.DetailProfileViewModel
-import com.example.capstone.ui.upload_event.UploadActivity
 import com.example.capstone.util.*
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.LatLng
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -49,6 +39,7 @@ class DetailEditPostActivity : AppCompatActivity() {
     private lateinit var viewModelFactory: ViewModelFactory
     private var getFile: File? = null
     private var suratFile: File? = null
+    private var latLng: LatLng? = null
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private val detailEventViewModel: DetailEventViewModel by viewModels { viewModelFactory }
 
@@ -65,7 +56,7 @@ class DetailEditPostActivity : AppCompatActivity() {
         getDataEvent()
         back()
         btnCancel()
-        btnUpload()
+        submitEvent()
         btnGalery()
         startPdf()
         addLoc()
@@ -94,11 +85,13 @@ class DetailEditPostActivity : AppCompatActivity() {
             onBackPressed()
         }
     }
+
     private fun btnGalery() {
         binding.tvUpload.setOnClickListener {
             startGalery()
         }
     }
+
     private fun setCalender() {
         val c = Calendar.getInstance()
         val year = c.get(Calendar.YEAR)
@@ -113,12 +106,19 @@ class DetailEditPostActivity : AppCompatActivity() {
                     "dd/MM/yy",
                     returnDate
                 )
-                binding.edtDateEventEdit.setText(StringHelper.parseDate("dd/MM/yy", "dd MM yyyy", date))
+                binding.edtDateEventEdit.setText(
+                    StringHelper.parseDate(
+                        "dd/MM/yy",
+                        "dd MM yyyy",
+                        date
+                    )
+                )
                 binding.edtDateEventEdit.error = null
             }, year, moth, day
         )
         dpd.show()
     }
+
     @SuppressLint("missingpermission")
     private fun getLocation() {
         if (ContextCompat.checkSelfPermission(
@@ -129,9 +129,8 @@ class DetailEditPostActivity : AppCompatActivity() {
         ) {
             fusedLocationProviderClient.lastLocation.addOnSuccessListener {
                 if (it != null) {
-                    val lat = it.latitude.toString()
-                    val lot = it.longitude.toString()
-                    binding.tvLocationEdit.text = lat + "," + lot
+                    latLng = LatLng(it.latitude, it.longitude)
+                    binding.tvLocationEdit.text = "${it.latitude} , ${it.longitude}"
                     Toast.makeText(this, "Berhasil Mendapatkan Lokasi", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "Gagal Mendapatkan Lokasi", Toast.LENGTH_SHORT).show()
@@ -173,8 +172,9 @@ class DetailEditPostActivity : AppCompatActivity() {
             binding.ivUpload.setImageURI(selectedImg)
         }
     }
+
     private fun addLoc() {
-        binding?.addLoaction.setOnClickListener {
+        binding.addLoaction.setOnClickListener {
             getLocation()
         }
     }
@@ -203,6 +203,33 @@ class DetailEditPostActivity : AppCompatActivity() {
         }
     }
 
+    private fun submitEvent() {
+        binding.btnPostEvent.setOnClickListener {
+            val edtDesc = binding.edtDescEventEdit.text.toString()
+            val edtName = binding.edtNameEventEdit.text.toString()
+            val edtLoc = binding.edtLocationEventEdit.text.toString()
+            val edtPhone = binding.edtContactEventEdit.text.toString()
+            val edtAuthor = binding.edtAuthorEventEdit.text.toString()
+            val edtEmail = binding.edtEmailEventEdit.text.toString()
+            val edtDate = binding.edtDateEventEdit.text.toString()
+
+            if (!TextUtils.isEmpty(edtDesc) && !TextUtils.isEmpty(edtName) && !TextUtils.isEmpty(
+                    edtLoc
+                ) && !TextUtils.isEmpty(edtPhone) && !TextUtils.isEmpty(edtPhone) && !TextUtils.isEmpty(
+                    edtAuthor
+                ) && !TextUtils.isEmpty(edtEmail) && !TextUtils.isEmpty(edtDate)
+            ) {
+                cobaUpdate()
+            } else {
+                MyAlertDialog(
+                    this,
+                    R.string.error_validation,
+                    R.drawable.error_form
+                ).show()
+            }
+        }
+    }
+
     private fun getDataEvent() {
         val id = intent.getIntExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, 0)
         detailEventViewModel.getEventById(id).observe(this) {
@@ -223,7 +250,8 @@ class DetailEditPostActivity : AppCompatActivity() {
                     binding.edtContactEventEdit.setText(it.data.data.contact_person)
                     binding.edtEmailEventEdit.setText(it.data.data.email)
                     binding.edtLocationEventEdit.setText(it.data.data.location)
-                    binding.tvLocationEdit.setText("${it.data.data.latitude}, ${it.data.data.longitude} ")
+                    binding.tvLocationEdit.text =
+                        "${it.data.data.latitude}, ${it.data.data.longitude} "
                     Glide.with(this@DetailEditPostActivity)
                         .load(it.data.data.image_poster)
                         .into(binding.ivUpload)
@@ -236,221 +264,244 @@ class DetailEditPostActivity : AppCompatActivity() {
         }
     }
 
+    private fun cobaUpdate() {
+        if (getFile != null && suratFile != null && latLng != null) {
+            val file = reduceFileImage(getFile as File)
+            val surat = reduceFileSurat(suratFile as File)
+            val id = intent.getIntExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, 0)
 
-    private fun btnUpload() {
-        binding.btnPostEvent.setOnClickListener {
-            showLoading(true)
-            nyoba()
-        }
-    }
+            val name = binding.edtNameEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val date = binding.edtDateEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val loc = binding.edtLocationEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val dekripsi = binding.edtDescEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val author = binding.edtAuthorEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val email = binding.edtEmailEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val contact = binding.edtContactEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
 
-    private fun nyoba(){
-        if (getFile != null && suratFile != null){
-            val task = fusedLocationProviderClient.lastLocation
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ), 10
-                )
-                return
+            val currentImageFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+            val imageMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
+                "image_poster",
+                file.name,
+                currentImageFile
+            )
+            val currentPdf = surat.asRequestBody("image/jpeg".toMediaTypeOrNull())
+            val pdfMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
+                "image_surat",
+                surat.name,
+                currentPdf
+            )
+            detailEventViewModel.updateEvent(
+                id,
+                name,
+                date,
+                imageMultipart,
+                pdfMultipart,
+                loc,
+                dekripsi,
+                lat = (latLng as LatLng).latitude,
+                lon = (latLng as LatLng).longitude,
+                author,
+                email,
+                contact
+            ).observe(this) {
+                if (it != null) {
+                    showLoading(false)
+                    Toast.makeText(
+                        this,
+                        "Sukses Update Story",
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                    startActivity(Intent(this, DetailPostActivity::class.java).also {
+                        it.putExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, id)
+                        finish()
+                    })
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Gagal Upload Story",
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                }
             }
+        } else if (getFile != null && suratFile != null) {
+            val file = reduceFileImage(getFile as File)
+            val surat = reduceFileSurat(suratFile as File)
+            val id = intent.getIntExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, 0)
 
-            var lat: Double
-            var lon: Double
+            val name = binding.edtNameEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val date = binding.edtDateEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val location = binding.edtLocationEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val dekripsi = binding.edtDescEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val author = binding.edtAuthorEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val email = binding.edtEmailEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val contact = binding.edtContactEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
 
-            task.addOnSuccessListener { location: Location ->
-                if (location != null) {
-                    Log.d("cekData1", "$location")
-                    lat = location.latitude
-                    lon = location.longitude
-                    val file = reduceFileImage(getFile as File)
-                    val surat = reduceFileSurat(suratFile as File)
-                    val id = intent.getIntExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, 0)
-
-                    val name = binding.edtNameEventEdit.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val date = binding.edtDateEventEdit.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val loc = binding.edtLocationEventEdit.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val dekripsi = binding.edtDescEventEdit.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val author = binding.edtAuthorEventEdit.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val email = binding.edtEmailEventEdit.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val contact = binding.edtContactEventEdit.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-
-                    val currentImageFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
-                    val imageMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
-                        "image_poster",
-                        file.name,
-                        currentImageFile
-                    )
-                    val currentPdf = surat.asRequestBody("image/jpeg".toMediaTypeOrNull())
-                    val pdfMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
-                        "image_surat",
-                        surat.name,
-                        currentPdf
-                    )
-                    val edtDesc = binding.edtDescEventEdit.text.toString()
-                    val edtName = binding.edtNameEventEdit.text.toString()
-                    val edtLoc = binding.edtLocationEventEdit.text.toString()
-                    val edtPhone = binding.edtContactEventEdit.text.toString()
-                    val edtAuthor = binding.edtAuthorEventEdit.text.toString()
-                    val edtEmail = binding.edtEmailEventEdit.text.toString()
-                    val edtDate = binding.edtDateEventEdit.text.toString()
-                    if (edtName.isEmpty()) {
-                        showLoading(false)
-                        binding.edtNameEventEdit.error = "Masukan Nama Event"
-                    }
-                    if (edtDesc.isEmpty()) {
-                        binding.edtDescEventEdit.error = "Masukan Deskripsi Event"
-                    }
-                    if (edtLoc.isEmpty()) {
-                        binding.edtLocationEventEdit.error = "Masukan Detail Lokasi Event"
-                    }
-                    if (edtPhone.isEmpty()) {
-                        binding.edtContactEventEdit.error = "Masukan No Telp Penyelenggara"
-                    }
-                    if (edtAuthor.isEmpty()) {
-                        binding.edtAuthorEventEdit.error = "Masukan Nama Penyelenggara"
-                    }
-                    if (edtEmail.isEmpty()) {
-                        binding.edtEmailEventEdit.error = "Masukan Alamat Email"
-                    }
-                    if (edtDate.isEmpty()) {
-                        binding.edtDateEventEdit.error = "Masukan Tanggal Pelaksanaan"
-                    } else {
-                        detailEventViewModel.updateEvent(
-                            id,
-                            name,
-                            date,
-                            imageMultipart,
-                            pdfMultipart,
-                            loc,
-                            dekripsi,
-                            lat,
-                            lon,
-                            author,
-                            email,
-                            contact
-                        ).observe(this) {
-                            if (it != null) {
-                                showLoading(false)
-                                Toast.makeText(
-                                    this,
-                                    "Sukses Update Story",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
-                                finish()
-                                startActivity(Intent(this, DetailPostActivity::class.java).also {
-                                    it.putExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, id)
-                                })
-                            } else {
-                                Toast.makeText(
-                                    this,
-                                    "Gagal Upload Story",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
-                            }
+            val currentImageFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+            val imageMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
+                "image_poster",
+                file.name,
+                currentImageFile
+            )
+            val currentPdf = surat.asRequestBody("application/pdf".toMediaTypeOrNull())
+            val pdfMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
+                "image_surat",
+                surat.name,
+                currentPdf
+            )
+            detailEventViewModel.updateEventWIthoutLocation(
+                id,
+                name,
+                date,
+                imageMultipart,
+                pdfMultipart,
+                location,
+                dekripsi,
+                author,
+                email,
+                contact
+            )
+                .observe(this) { result ->
+                    when (result) {
+                        is Result.Loading -> {
+                            showLoading(true)
+                        }
+                        is Result.Error -> {
+                            showLoading(false)
+                            successAlert()
+                        }
+                        is Result.Success -> {
+                            successAlert()
                         }
                     }
-                } else {
+
+                }
+
+        } else if (latLng != null) {
+            val id = intent.getIntExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, 0)
+
+            val name = binding.edtNameEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val date = binding.edtDateEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val loc = binding.edtLocationEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val dekripsi = binding.edtDescEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val author = binding.edtAuthorEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val email = binding.edtEmailEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val contact = binding.edtContactEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            detailEventViewModel.updateEventWithouImage(
+                id,
+                name,
+                date,
+                loc,
+                dekripsi,
+                lat = (latLng as LatLng).latitude,
+                lon = (latLng as LatLng).longitude,
+                author,
+                email,
+                contact
+            ).observe(this) {
+                if (it != null) {
+                    Log.d("cekData2", "$it")
                     showLoading(false)
-                    Toast.makeText(this, "Tidak dapat menemukan lokasi", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        "Sukses Update Story Without Image",
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                    finish()
+                    startActivity(Intent(this, DetailPostActivity::class.java).also {
+                        it.putExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, id)
+                    })
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Gagal Upload Story",
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
                 }
             }
         } else {
-            val task = fusedLocationProviderClient.lastLocation
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
+            val id = intent.getIntExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, 0)
 
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ), 10
-                )
-                return
-            }
-
-            var lat: Double
-            var lon: Double
-
-            task.addOnSuccessListener { location: Location ->
-                if (location != null) {
-                    lat = location.latitude
-                    lon = location.longitude
-                val id = intent.getIntExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, 0)
-
-                val name = binding.edtNameEventEdit.text.toString()
-                    .toRequestBody("text/plain".toMediaTypeOrNull())
-                val date = binding.edtDateEventEdit.text.toString()
-                    .toRequestBody("text/plain".toMediaTypeOrNull())
-                val loc = binding.edtLocationEventEdit.text.toString()
-                    .toRequestBody("text/plain".toMediaTypeOrNull())
-                val dekripsi = binding.edtDescEventEdit.text.toString()
-                    .toRequestBody("text/plain".toMediaTypeOrNull())
-                val author = binding.edtAuthorEventEdit.text.toString()
-                    .toRequestBody("text/plain".toMediaTypeOrNull())
-                val email = binding.edtEmailEventEdit.text.toString()
-                    .toRequestBody("text/plain".toMediaTypeOrNull())
-                val contact = binding.edtContactEventEdit.text.toString()
-                    .toRequestBody("text/plain".toMediaTypeOrNull())
-                    detailEventViewModel.updateEventWithouImage(id,name,date,loc,dekripsi,lat,lon,author, email, contact).observe(this){
-                        if (it != null) {
-                            Log.d("cekData2", "$it")
+            val name = binding.edtNameEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val date = binding.edtDateEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val location = binding.edtLocationEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val dekripsi = binding.edtDescEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val author = binding.edtAuthorEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val email = binding.edtEmailEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val contact = binding.edtContactEventEdit.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            detailEventViewModel.updateEventWIthoutImageLocation(
+                id,
+                name,
+                date,
+                location,
+                dekripsi,
+                author,
+                email,
+                contact
+            )
+                .observe(this) { result ->
+                    when (result) {
+                        is Result.Loading -> {
+                            showLoading(true)
+                        }
+                        is Result.Error -> {
                             showLoading(false)
-                            Toast.makeText(
-                                this,
-                                "Sukses Update Story Without Image",
-                                Toast.LENGTH_SHORT
-                            )
-                                .show()
-                            finish()
-                            startActivity(Intent(this, DetailPostActivity::class.java).also {
-                                it.putExtra(DetailPostActivity.EXTRA_ID_POST_DETAIL, id)
-                            })
-                        } else {
-                            Toast.makeText(
-                                this,
-                                "Gagal Upload Story",
-                                Toast.LENGTH_SHORT
-                            )
-                                .show()
+                            successAlert()
+                        }
+                        is Result.Success -> {
+                            successAlert()
                         }
                     }
-                } else {
-                    showLoading(false)
-                    Toast.makeText(this, "Tidak dapat menemukan lokasi", Toast.LENGTH_SHORT).show()
                 }
-            }
         }
     }
+
+    private fun successAlert() {
+        MyAlertDialog(
+            this,
+            R.string.sukses,
+            R.drawable.success_alert,
+            fun() {
+                val moveActivity = Intent(this, MainActivity::class.java)
+                moveActivity.flags =
+                    Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                startActivity(moveActivity)
+                finish()
+            }
+        ).show()
+    }
+
     private fun showLoading(isLoading: Boolean) {
         binding.progressBarUpload.visibility = if (isLoading) View.VISIBLE else View.GONE
     }

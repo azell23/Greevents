@@ -5,28 +5,27 @@ import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.capstone.R
+import com.example.capstone.data.Result
 import com.example.capstone.databinding.ActivityUploadBinding
 import com.example.capstone.factory.ViewModelFactory
 import com.example.capstone.ui.custom_view.MyAlertDialog
-import com.example.capstone.ui.home.HomeFragment
-import com.example.capstone.ui.list_join.ListJoinActivity
 import com.example.capstone.ui.main.MainActivity
 import com.example.capstone.util.*
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.LatLng
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -38,6 +37,7 @@ class UploadActivity : AppCompatActivity() {
     private lateinit var binding: ActivityUploadBinding
     private var getFile: File? = null
     private var suratFile: File? = null
+    private var latLng: LatLng? = null
     private lateinit var viewModelFactory: ViewModelFactory
     private val uploadVieModel: UploadViewModel by viewModels { viewModelFactory }
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -74,7 +74,7 @@ class UploadActivity : AppCompatActivity() {
         setPermission()
         setActionBar()
         setViewModel()
-        btnUpload()
+        submitEvent()
         addLoc()
         startPdf()
 //        btnPdf()
@@ -93,7 +93,8 @@ class UploadActivity : AppCompatActivity() {
     private fun setActionBar() {
         supportActionBar?.hide()
     }
-    private fun back(){
+
+    private fun back() {
         binding.btnBack.setOnClickListener {
             onBackPressed()
         }
@@ -140,9 +141,8 @@ class UploadActivity : AppCompatActivity() {
         ) {
             fusedLocationProviderClient.lastLocation.addOnSuccessListener {
                 if (it != null) {
-                    val lat = it.latitude.toString()
-                    val lot = it.longitude.toString()
-                    binding.tvLocation.text = lat + "," + lot
+                    latLng = LatLng(it.latitude, it.longitude)
+                    binding.tvLocation.text = "${it.latitude} , ${it.longitude}"
                     Toast.makeText(this, "Berhasil Mendapatkan Lokasi", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "Gagal Mendapatkan Lokasi", Toast.LENGTH_SHORT).show()
@@ -247,142 +247,146 @@ class UploadActivity : AppCompatActivity() {
 
             suratFile = myFile
 
-            binding.tvUploadFile.setText("Berhasil upload !!")
+            binding.tvUploadFile.text = "Berhasil upload !!"
         }
     }
 
-    private fun btnUpload() {
+    private fun submitEvent() {
         binding.btnPostEvent.setOnClickListener {
-            showLoading(true)
-            uploadStory()
+            val edtDesc = binding.edtDescEvent.text.toString()
+            val edtName = binding.edtNameEvent.text.toString()
+            val edtLoc = binding.edtLocationEvent.text.toString()
+            val edtPhone = binding.edtContactEvent.text.toString()
+            val edtAuthor = binding.edtAuthorEvent.text.toString()
+            val edtEmail = binding.edtEmailEvent.text.toString()
+            val edtDate = binding.edtDateEvent.text.toString()
+
+            if (!TextUtils.isEmpty(edtDesc) && !TextUtils.isEmpty(edtName) && !TextUtils.isEmpty(
+                    edtLoc
+                ) && !TextUtils.isEmpty(edtPhone) && !TextUtils.isEmpty(edtPhone) && !TextUtils.isEmpty(
+                    edtAuthor
+                ) && !TextUtils.isEmpty(edtEmail) && !TextUtils.isEmpty(edtDate) && getFile != null && suratFile != null
+            ) {
+                uploadStory()
+            } else {
+                MyAlertDialog(
+                    this,
+                    R.string.error_validation,
+                    R.drawable.error_form
+                ).show()
+            }
         }
     }
 
     private fun uploadStory() {
-        if (getFile != null && suratFile != null) {
-            val task = fusedLocationProviderClient.lastLocation
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
+        if (getFile != null && suratFile != null && latLng != null) {
 
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ), 10
-                )
-                return
-            }
-
-            var lat: Double
-            var lon: Double
-
-            task.addOnSuccessListener { location: Location ->
-                if (location != null) {
-                    lat = location.latitude
-                    lon = location.longitude
-                    val file = reduceFileImage(getFile as File)
-                    val surat = reduceFileSurat(suratFile as File)
-
-                    val name = binding?.edtNameEvent?.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val date = binding?.edtDateEvent?.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val location = binding?.edtLocationEvent?.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val dekripsi = binding?.edtDescEvent?.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val author = binding?.edtAuthorEvent?.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val email = binding?.edtEmailEvent?.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-                    val contact = binding?.edtContactEvent?.text.toString()
-                        .toRequestBody("text/plain".toMediaTypeOrNull())
-
-                    val currentImageFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
-                    val imageMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
-                        "image_poster",
-                        file.name,
-                        currentImageFile
-                    )
-                    val currentPdf = surat.asRequestBody("application/pdf".toMediaTypeOrNull())
-                    val pdfMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
-                        "image_surat",
-                        surat.name,
-                        currentPdf
-                    )
-                    val edtDesc = binding?.edtDescEvent?.text.toString()
-                    val edtName = binding?.edtNameEvent?.text.toString()
-                    val edtLoc = binding?.edtLocationEvent?.text.toString()
-                    val edtPhone = binding?.edtContactEvent?.text.toString()
-                    val edtAuthor = binding?.edtAuthorEvent?.text.toString()
-                    val edtEmail = binding?.edtEmailEvent?.text.toString()
-                    val edtDate = binding?.edtDateEvent?.text.toString()
-                    if (edtName.isEmpty()) {
-                        showLoading(false)
-                        binding.edtNameEvent.error = "Masukan Nama Event"
-                    }
-                    if (edtDesc.isEmpty()){
-                        binding.edtDescEvent.error = "Masukan Deskripsi Event"
-                    }
-                    if (edtLoc.isEmpty()){
-                        binding.edtLocationEvent.error = "Masukan Detail Lokasi Event"
-                    }
-                    if (edtPhone.isEmpty()){
-                        binding.edtContactEvent.error = "Masukan No Telp Penyelenggara"
-                    }
-                    if (edtAuthor.isEmpty()){
-                        binding.edtAuthorEvent.error = "Masukan Nama Penyelenggara"
-                    }
-                    if (edtEmail.isEmpty()){
-                        binding.edtEmailEvent.error = "Masukan Alamat Email"
-                    }
-                    if (edtDate.isEmpty()){
-                        binding.edtDateEvent.error = "Masukan Tanggal Pelaksanaan"
-                    }
-                    else {
-                        uploadVieModel.uploadEvents(
-                            name,
-                            date,
-                            imageMultipart,
-                            pdfMultipart,
-                            location,
-                            dekripsi,
-                            lat,
-                            lon,
-                            author,
-                            email,
-                            contact
-                        ).observe(this) {
-                            if (it != null) {
-                                showLoading(false)
-                                successAlert()
-                                Toast.makeText(
-                                    this,
-                                    "Sukses Upload Story",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
-                            } else {
-                                Toast.makeText(
-                                    this,
-                                    "Gagal Upload Story",
-                                    Toast.LENGTH_SHORT
-                                )
-                                    .show()
-                            }
-                        }
-                    }
-                } else {
+            val file = reduceFileImage(getFile as File)
+            val surat = reduceFileSurat(suratFile as File)
+            val name = binding.edtNameEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val date = binding.edtDateEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val location = binding.edtLocationEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val dekripsi = binding.edtDescEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val author = binding.edtAuthorEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val email = binding.edtEmailEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val contact = binding.edtContactEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val currentImageFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+            val imageMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
+                "image_poster",
+                file.name,
+                currentImageFile
+            )
+            val currentPdf = surat.asRequestBody("application/pdf".toMediaTypeOrNull())
+            val pdfMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
+                "image_surat",
+                surat.name,
+                currentPdf
+            )
+            uploadVieModel.uploadEvents(
+                name,
+                date,
+                imageMultipart,
+                pdfMultipart,
+                location,
+                dekripsi,
+                lat = (latLng as LatLng).latitude,
+                lon = (latLng as LatLng).longitude,
+                author,
+                email,
+                contact
+            ).observe(this) {
+                if (it != null) {
                     showLoading(false)
-                    Toast.makeText(this, "Tidak dapat menemukan lokasi", Toast.LENGTH_SHORT).show()
+                    successAlert()
+                    Toast.makeText(
+                        this,
+                        "Sukses Upload Story",
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Gagal Upload Story",
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                }
+            }
+        } else if (getFile != null && suratFile != null) {
+            val file = reduceFileImage(getFile as File)
+            val surat = reduceFileSurat(suratFile as File)
+
+            val name = binding.edtNameEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val date = binding.edtDateEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val location = binding.edtLocationEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val dekripsi = binding.edtDescEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val author = binding.edtAuthorEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val email = binding.edtEmailEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+            val contact = binding.edtContactEvent.text.toString()
+                .toRequestBody("text/plain".toMediaTypeOrNull())
+
+            val currentImageFile = file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+            val imageMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
+                "image_poster",
+                file.name,
+                currentImageFile
+            )
+            val currentPdf = surat.asRequestBody("application/pdf".toMediaTypeOrNull())
+            val pdfMultipart: MultipartBody.Part = MultipartBody.Part.createFormData(
+                "image_surat",
+                surat.name,
+                currentPdf
+            )
+            uploadVieModel.uploadEventsWithoutLocation(
+                name, date, imageMultipart,
+                pdfMultipart, location, dekripsi, author, email, contact
+            ).observe(this) { result ->
+
+                when (result) {
+                    is Result.Loading -> {
+                        showLoading(true)
+                    }
+                    is Result.Error -> {
+                        showLoading(false)
+                        successAlert()
+                    }
+                    is Result.Success -> {
+                        successAlert()
+                    }
                 }
             }
         } else {
@@ -392,7 +396,7 @@ class UploadActivity : AppCompatActivity() {
     }
 
     private fun addLoc() {
-        binding?.addLoaction.setOnClickListener {
+        binding.addLoaction.setOnClickListener {
             getLocation()
         }
     }

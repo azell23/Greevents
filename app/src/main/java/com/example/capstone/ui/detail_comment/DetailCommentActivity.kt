@@ -1,17 +1,16 @@
 package com.example.capstone.ui.detail_comment
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.example.capstone.R
 import com.example.capstone.data.Result
@@ -39,6 +38,8 @@ class DetailCommentActivity : AppCompatActivity() {
         getDataUser()
         btnDeleteComment()
         btnUpdateComment()
+        setActionBar()
+        back()
 
     }
 
@@ -46,10 +47,18 @@ class DetailCommentActivity : AppCompatActivity() {
         viewModelFactory = ViewModelFactory.getInstnce(binding.root.context)
     }
 
+    private fun setActionBar() {
+        supportActionBar?.hide()
+    }
+
+    private fun back() {
+        binding.btnBack.setOnClickListener {
+            onBackPressed()
+        }
+    }
 
     private fun getDataUser() {
         val i = intent.getIntExtra(EXTRA_USER, 0)
-        Log.d("COBAI", "$i")
         detailProfileViewModel.getDataUser.observe(this) {
             binding.apply {
                 when (it) {
@@ -81,7 +90,8 @@ class DetailCommentActivity : AppCompatActivity() {
                 is Result.Success -> {
                     showLoading(false)
                     binding.apply {
-                        tvCreated.text = Constanta.formatDate(it.data.data.createdAt, TimeZone.getDefault().id)
+                        tvCreated.text =
+                            Constanta.formatDate(it.data.data.createdAt, TimeZone.getDefault().id)
                         tvComment.text = it.data.data.commentar
                         tvUsernameComment.text = it.data.data.user.name
                         Glide.with(binding.ivAvatarUser)
@@ -124,12 +134,11 @@ class DetailCommentActivity : AppCompatActivity() {
                     }
                     is Result.Error -> {
                         showLoading(false)
-                        Log.d("HapusD", "${it.error}")
                     }
                     is Result.Success -> {
                         showLoading(false)
-                        Toast.makeText(this, "Berhasil menghapus Komentar", Toast.LENGTH_SHORT).show()
-                        Log.d("hapusC", "${it.data.msg}")
+                        Toast.makeText(this, "Berhasil menghapus Komentar", Toast.LENGTH_SHORT)
+                            .show()
                     }
                 }
             }
@@ -151,22 +160,24 @@ class DetailCommentActivity : AppCompatActivity() {
                         val btnOk = mDialogView.findViewById<Button>(R.id.btnUpdateComment)
                         val edtComment =
                             mDialogView.findViewById<EditText>(R.id.edtCommentUpdateEvent)
-                        val cancelUpdate = mDialogView.findViewById<Button>(R.id.btnCancelUpdateComment)
+                        val cancelUpdate =
+                            mDialogView.findViewById<Button>(R.id.btnCancelUpdateComment)
                         edtComment.setText("$comment")
                         btnOk.setOnClickListener {
-                           val update = edtComment.text.toString()
-                            detailCommentViewModel.updateComment(idComment,update).observe(this){
-                                when(it){
+                            val update = edtComment.text.toString()
+                            detailCommentViewModel.updateComment(idComment, update).observe(this) {
+                                when (it) {
                                     is Result.Error -> {
                                         Log.d("comentC", "${it.error}")
                                     }
-                                    is Result.Success ->{
+                                    is Result.Success -> {
                                         Log.d("commentU", "${it.data.msg}")
                                     }
                                 }
                             }
-                            Toast.makeText(this, "Sukses Update Komentar", Toast.LENGTH_SHORT).show()
-                            startActivity(Intent(this,DetailCommentActivity::class.java).also {
+                            Toast.makeText(this, "Sukses Update Komentar", Toast.LENGTH_SHORT)
+                                .show()
+                            startActivity(Intent(this, DetailCommentActivity::class.java).also {
                                 it.putExtra(EXTRA_COMMENT, idComment)
                             })
                             finish()

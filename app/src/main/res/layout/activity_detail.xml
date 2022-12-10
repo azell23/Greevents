@@ -249,8 +249,8 @@
                     android:textColor="@color/black"
                     android:textSize="20sp"
                     android:textStyle="bold"
-                    app:layout_constraintStart_toStartOf="@+id/tvContactHp"
-                    app:layout_constraintTop_toBottomOf="@+id/tvAuthor" />
+                    app:layout_constraintStart_toStartOf="@+id/btnLihatSk"
+                    app:layout_constraintTop_toBottomOf="@+id/btnLihatSk" />
 
                 <Button
                     android:id="@+id/btnLihatSk"
@@ -262,10 +262,9 @@
                     android:textAllCaps="false"
                     android:textColor="@color/white"
                     android:textSize="14sp"
-                    app:layout_constraintBottom_toBottomOf="@+id/detailEvent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toEndOf="@+id/detailEvent"
-                    app:layout_constraintTop_toTopOf="@+id/detailEvent" />
+                    app:layout_constraintBottom_toTopOf="@+id/detailEvent"
+                    app:layout_constraintStart_toStartOf="@+id/tvAuthor"
+                    app:layout_constraintTop_toBottomOf="@+id/tvAuthor" />
                 <TextView
                     android:id="@+id/tvDescEvent"
                     style="@style/AppTheme.TextMain"
