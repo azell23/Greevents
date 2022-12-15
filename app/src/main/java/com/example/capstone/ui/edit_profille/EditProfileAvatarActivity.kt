@@ -18,6 +18,7 @@ import com.bumptech.glide.Glide
 import com.example.capstone.data.Result
 import com.example.capstone.databinding.ActivityEditProfileAvatarBinding
 import com.example.capstone.factory.ViewModelFactory
+import com.example.capstone.ui.profile.DetailProfileActivity
 import com.example.capstone.ui.profile.DetailProfileViewModel
 import com.example.capstone.util.reduceFileImage
 import com.example.capstone.util.uriToFile
@@ -125,8 +126,9 @@ class EditProfileAvatarActivity : AppCompatActivity() {
             }
             builder.setPositiveButton("Iya") { _, _ ->
                 updateProfileAvatar()
-                finish()
-                onResume()
+                startActivity(Intent(this, DetailProfileActivity::class.java).also {
+                    finish()
+                })
             }
             val alert = builder.create()
             alert.show()
